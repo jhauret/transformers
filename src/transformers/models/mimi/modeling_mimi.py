@@ -1621,7 +1621,7 @@ class MimiModel(MimiPreTrainedModel):
                 encoder_embeddings,
             )
 
-        return MimiEncoderOutput(encoded_frames, encoder_past_key_values)
+        return MimiEncoderOutput(encoded_frames, encoder_past_key_values, encoder_embeddings)
 
     def _decode_frame(
         self,
