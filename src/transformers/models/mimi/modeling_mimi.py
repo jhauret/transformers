@@ -90,6 +90,8 @@ class MimiEncoderOutput(ModelOutput):
         encoder_past_key_values (`Cache`, *optional*):
             Pre-computed hidden-states (key and values in the self-attention blocks) that can be used to speed up sequential decoding of the encoder transformer.
             This typically consists in the `past_key_values` returned by the model at a previous stage of decoding, when `use_cache=True` or `config.use_cache=True`.
+        audio_embeddings (`torch.Tensor`  of shape `(batch_size, embeddings_dim, codes_length)`, *optional*):
+            Continous embeddings computed using `model.encode`.
 
             The model will output the same cache format that is fed as input.
 
@@ -99,6 +101,7 @@ class MimiEncoderOutput(ModelOutput):
 
     audio_codes: torch.LongTensor = None
     encoder_past_key_values: Optional[Union[Cache, List[torch.FloatTensor]]] = None
+    audio_embeddings: torch.Tensor = None
 
 
 @dataclass
@@ -1551,7 +1554,7 @@ class MimiModel(MimiPreTrainedModel):
 
         codes = self.quantizer.encode(embeddings, num_quantizers)
         codes = codes.transpose(0, 1)
-        return codes, past_key_values
+        return codes, past_key_values, embeddings
 
     def encode(
         self,
@@ -1603,7 +1606,7 @@ class MimiModel(MimiPreTrainedModel):
         if padding_mask is None:
             padding_mask = torch.ones_like(input_values).bool()
 
-        encoded_frames, encoder_past_key_values = self._encode_frame(
+        encoded_frames, encoder_past_key_values, encoder_embeddings = self._encode_frame(
             input_values,
             num_quantizers,
             padding_mask.bool(),
@@ -1615,6 +1618,7 @@ class MimiModel(MimiPreTrainedModel):
             return (
                 encoded_frames,
                 encoder_past_key_values,
+                encoder_embeddings,
             )
 
         return MimiEncoderOutput(encoded_frames, encoder_past_key_values)
