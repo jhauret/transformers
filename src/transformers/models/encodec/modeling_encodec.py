@@ -661,7 +661,7 @@ class EncodecModel(EncodecPreTrainedModel):
         embeddings_frames = torch.stack(embeddings_frames)
 
         if not return_dict:
-            return (encoded_frames, scales, encoder_embeddings)
+            return (encoded_frames, scales, embeddings_frames)
 
         return EncodecEncoderOutput(encoded_frames, scales, embeddings_frames)
 
