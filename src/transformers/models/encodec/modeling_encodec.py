@@ -813,7 +813,7 @@ class EncodecModel(EncodecPreTrainedModel):
             raise ValueError("You specified `audio_scales` but did not specify the `audio_codes`")
 
         if audio_scales is None and audio_codes is None:
-            audio_codes, audio_scales = self.encode(input_values, padding_mask, bandwidth, False)
+            audio_codes, audio_scales, _ = self.encode(input_values, padding_mask, bandwidth, False)
 
         audio_values = self.decode(audio_codes, audio_scales, padding_mask, return_dict=return_dict)[0]
         if not return_dict:
