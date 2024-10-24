@@ -62,10 +62,13 @@ class EncodecEncoderOutput(ModelOutput):
             Discret code embeddings computed using `model.encode`.
         audio_scales (`torch.Tensor` of shape `(batch_size, nb_chunks)`, *optional*):
             Scaling factor for each `audio_codes` input. This is used to unscale each chunk of audio when decoding.
+        audio_embeddings (`torch.Tensor`  of shape `(batch_size, embeddings_dim, codes_length)`, *optional*):
+            Continous embeddings computed using `model.encode`.
     """
 
     audio_codes: torch.LongTensor = None
     audio_scales: torch.FloatTensor = None
+    audio_embeddings: torch.Tensor = None
 
 
 @dataclass
@@ -584,7 +587,7 @@ class EncodecModel(EncodecPreTrainedModel):
         embeddings = self.encoder(input_values)
         codes = self.quantizer.encode(embeddings, bandwidth)
         codes = codes.transpose(0, 1)
-        return codes, scale
+        return codes, scale, embeddings
 
     def encode(
         self,
@@ -638,6 +641,7 @@ class EncodecModel(EncodecPreTrainedModel):
 
         encoded_frames = []
         scales = []
+        embeddings_frames = []
 
         step = chunk_length - stride
         if (input_length % stride) - step != 0:
@@ -648,16 +652,18 @@ class EncodecModel(EncodecPreTrainedModel):
         for offset in range(0, input_length - step, stride):
             mask = padding_mask[..., offset : offset + chunk_length].bool()
             frame = input_values[:, :, offset : offset + chunk_length]
-            encoded_frame, scale = self._encode_frame(frame, bandwidth, mask)
+            encoded_frame, scale, embeddings_frame = self._encode_frame(frame, bandwidth, mask)
             encoded_frames.append(encoded_frame)
             scales.append(scale)
+            embeddings_frames.append(embeddings_frame)
 
         encoded_frames = torch.stack(encoded_frames)
+        embeddings_frames = torch.stack(embeddings_frames)
 
         if not return_dict:
-            return (encoded_frames, scales)
+            return (encoded_frames, scales, encoder_embeddings)
 
-        return EncodecEncoderOutput(encoded_frames, scales)
+        return EncodecEncoderOutput(encoded_frames, scales, encoder_embeddings)
 
     @staticmethod
     def _linear_overlap_add(frames: List[torch.Tensor], stride: int):
