@@ -663,7 +663,7 @@ class EncodecModel(EncodecPreTrainedModel):
         if not return_dict:
             return (encoded_frames, scales, encoder_embeddings)
 
-        return EncodecEncoderOutput(encoded_frames, scales, encoder_embeddings)
+        return EncodecEncoderOutput(encoded_frames, scales, embeddings_frames)
 
     @staticmethod
     def _linear_overlap_add(frames: List[torch.Tensor], stride: int):
